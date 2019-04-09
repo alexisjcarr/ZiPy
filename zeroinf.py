@@ -3,7 +3,7 @@ import scipy as sp
 from scipy.special import logit, expit
 
 class Zeroinf:
-    def _init_(self,formula, data, dist=’poisson’, link=’logit’):
+    def _init_(self, formula, data, dist= 'poisson', link= 'logit'):
         ## call and formula
         '''
         cl <- match.call()
@@ -43,14 +43,14 @@ class Zeroinf:
         '''
 
         ## extract terms, model matrices, response
-        self.mt
-        self.mtX
-        self.X
+        self.mt = ''
+        self.mtX = ''
+        self.X = ''
         
-        self.mtZ
-        self.Z
+        self.mtZ = ''
+        self.Z = ''
 
-        self.Y
+        self.Y = ''
 
         ## convenience variables
         self.n = len(Y)
@@ -60,16 +60,16 @@ class Zeroinf:
         self.Y1 = self.Y > 0
 
     def ziPoisson(self, parms): 
-		'''
-		Log-likelihood for zeroinfl
+	'''
+	Log-likelihood for zeroinfl
 		
         aside: parms a function that gets or sets simulation model parameters, 
         main or sub-equations, initial values, time steps or solvers and 
         extract simulation results.
         '''
-		## count mean
+	## count mean
         mu = np.exp(self.X @ parms[1:kx] + offsetx) #offsets will be set in constructor
-		## binary mean
+	## binary mean
         phi = expit(self.Z @ parms[(kx+1):(kx+kz)] + offsetz))
         # vector of linkinv(Z @ parms[(kx+1):(kx+kz)] + offsetz))
         '''
@@ -95,32 +95,32 @@ class Zeroinf:
         '''
         Above is the dot product, I believe. So you are taking 
         Σ[weights[Y0] • (loglik0[Y0] + Σ(weights[Y1] • loglik1[Y1])]
-        weights = 1, so yeah. 
+        weights = 1, so code works for now. 
         '''
 
-    def gradPoisson(self, parms):
-		## count mean
-		eta = # X • parms[1:kx} + offsetx
-		mu = np.exp(eta)
-		## binary mean
-		etaz = # z • parms[{kx+1):(kx+kz)] + offsetz)
-		muz = # linkinv(etaz) # will probably need Jones help
+    def gradPoisson(self, parms): # will work on tonight
+	## count mean
+	eta = self.X @ parms[1:kx} + offsetx
+	mu = np.exp(eta)
+	## binary mean
+	etaz = self.Z @ parms[{kx+1):(kx+kz)] + offsetz)
+	muz = expit(etaz) 
 
-		## densities at 0
-		clogdens0 = -mu
-		dens0 = muz * (1 – Y1) + np.exp(np.log(1-muz) + clogdens0)
+	## densities at 0
+	clogdens0 = -mu
+	dens0 = muz * (1 – self.Y1) + np.exp(np.log(1-muz) + clogdens0)
 
-		## working residuals
-		if(Y1):
-			wres_count = Y – mu
-		else:
-			wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + log(mu)))
-
-		if(Y1):
-			wres_zero = -1/(1-muz)* #(linkobk$mu.eta(etaz))
-		else:
-			wres_zero = #(linkobj$mu.eta(etaz) – np.exp(clogdens0) * linkobj$mu.eta(etaz))/dens0) # looking for def for that
-
-		return # column sums of these two columns bound
+	## working residuals
+	if(self.Y1): #boolean truthy
+		wres_count = self.Y – mu
+	else:
+		wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + log(mu)))
+		
+	if(self.Y1):
+		wres_zero = -1/(1-muz)* #(linkobk$mu.eta(etaz)) -- Ask Jones
+	else:
+		wres_zero = #(linkobj$mu.eta(etaz) – np.exp(clogdens0) * linkobj$mu.eta(etaz))/dens0) --AJ
+		
+	return # column sums of these two columns bound
 			# 1) wres_count * weights * X
 			# 2) wres_zero * weights * Z
