@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp 
 from scipy.special import logit, expit
 
-class Zeroinf: 
+class Zeroinf:
     def _init_(self,formula, data, dist=’poisson’, link=’logit’):
         ## call and formula
         '''
@@ -58,8 +58,8 @@ class Zeroinf:
         self.kz = self.Z.shape[1] #number of columns in Z matrix
     	self.Y0 = self.Y <= 0        	
         self.Y1 = self.Y > 0
-        
-	def ziPoisson(self, parms): 
+
+    def ziPoisson(self, parms): 
 		'''
 		Log-likelihood for zeroinfl
 		
@@ -98,7 +98,7 @@ class Zeroinf:
         weights = 1, so yeah. 
         '''
 
-	def gradPoisson(self, parms):
+    def gradPoisson(self, parms):
 		## count mean
 		eta = # X • parms[1:kx} + offsetx
 		mu = np.exp(eta)
