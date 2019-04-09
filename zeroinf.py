@@ -70,7 +70,7 @@ class Zeroinf:
 		## count mean
         mu = np.exp(self.X @ parms[1:kx] + offsetx) #offsets will be set in constructor
 		## binary mean
-        phi = expit(Z @ parms[(kx+1):(kx+kz)] + offsetz))
+        phi = expit(self.Z @ parms[(kx+1):(kx+kz)] + offsetz))
         # vector of linkinv(Z @ parms[(kx+1):(kx+kz)] + offsetz))
         '''
         For now: Just hard code the inverse of logit
@@ -87,9 +87,9 @@ class Zeroinf:
         '''
         ## log-likelihood for y = 0 and y >= 1
         loglik0 = np.log( phi + np.exp( log(1-phi) – mu ) ) 
-        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(Y, lambda=mu)
+        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, lambda=mu)
         ## collect and return
-        loglik = sum(loglik[Y0] + loglik[Y1])
+        loglik = sum(loglik[self.Y0] + loglik[self.Y1])
         ##loglik <- sum(weights[Y0] * loglik0[Y0]) + sum(weights[Y1] * loglik1[Y1])
         return loglik # return loglik
         '''
