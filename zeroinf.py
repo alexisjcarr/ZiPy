@@ -36,12 +36,12 @@ class Zeroinf:
         
 
     def ziPoisson(self, parms): 
-	'''
-	***Log-likelihood for Zeroinf***
+		'''
+		***Log-likelihood for Zeroinf***
         '''
-	## count mean
+		## count mean
         mu = np.exp(self.X @ parms[1:self.kx] + self.offsetx) 
-	## binary mean
+		## binary mean
         phi = expit(self.Z @ parms[(self.kx+1):(self.kx+self.kz)] + self.offsetz))
         # expit is inverse link of logit
        
@@ -51,37 +51,36 @@ class Zeroinf:
         ## collect and return
         loglik = sum(self.weights[self.Y0] @ loglik0[self.Y0]) + \
             sum(self.weights[self.Y1] @ loglik1[self.Y1])
-	
         return loglik
 
-    def gradPoisson(self, parms): #unfinished
+    def gradPoisson(self, parms):
         '''
         ***Gradient likelihood for Zeroinf***
         '''
-	## count mean
-	eta = # X • parms[1:kx} + offsetx
-	mu = np.exp(eta)
-	## binary mean
-	etaz = # z • parms[{kx+1):(kx+kz)] + offsetz)
-	muz = # linkinv(etaz) # will probably need Jones help
-	
-	## densities at 0
-	clogdens0 = -mu
-	dens0 = muz * (1 – Y1) + np.exp(np.log(1-muz) + clogdens0)
-	
-	## working residuals
-	if(Y1):
-		wres_count = Y – mu
-	else:
-		wres_count = -np.exp(-np.log(dens0) + log(1-muz) +\ 
-				     clogdens0 + log(mu)))
+		## count mean
+		eta = # X • parms[1:kx} + offsetx
+		mu = np.exp(eta)
+		## binary mean
+		etaz = # z • parms[{kx+1):(kx+kz)] + offsetz)
+		muz = # linkinv(etaz) # will probably need Jones help
 
-	if(Y1):
-		wres_zero = -1/(1-muz)* #(linkobk$mu.eta(etaz))
-	else:
-		wres_zero = #(linkobj$mu.eta(etaz) – np.exp(clogdens0) * linkobj$mu.eta(etaz))/dens0) # looking for def for that
-		
-	return # column sums of these two columns bound
+		## densities at 0
+		clogdens0 = -mu
+		dens0 = muz * (1 – Y1) + np.exp(np.log(1-muz) + clogdens0)
+
+		## working residuals
+		if(Y1):
+			wres_count = Y – mu
+		else:
+			wres_count = -np.exp(-np.log(dens0) + log(1-muz) +\ 
+                clogdens0 + log(mu)))
+
+		if(Y1):
+			wres_zero = -1/(1-muz)* #(linkobk$mu.eta(etaz))
+		else:
+			wres_zero = #(linkobj$mu.eta(etaz) – np.exp(clogdens0) * linkobj$mu.eta(etaz))/dens0) # looking for def for that
+
+		return # column sums of these two columns bound
 			# 1) wres_count * weights * X
 			# 2) wres_zero * weights * Z
 
