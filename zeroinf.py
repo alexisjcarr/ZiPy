@@ -28,11 +28,11 @@ class Zeroinf:
         self.Y1 = self.Y > 0
 
     def formula_extraction(self):
-        self.X_, self.Z_ = formula.str.split('|')
-        self.Z_ = '{beg}{z_}'.format(beg=formula.str.split('~')[0],z_=Z_)
-        self.Y_, self.X = pat.dmatrices(X_, data, return_type='dataframe')
-        self.Z = pat.dmatrices(Z_, data, return_type='dataframe')[1]
-        self.Y = np.squeeze(self.Y_)
+        X_, Z_ = self.formula.str.split('|')
+        Z_ = '{}{}'.format(self.formula.str.split('~')[0],Z_)
+        Y_, self.X = pat.dmatrices(X_, self.data, return_type='dataframe')
+        self.Z = pat.dmatrices(Z_, self.data, return_type='dataframe')[1]
+        self.Y = np.squeeze(Y_)
         
 
     def ziPoisson(self, parms): 
@@ -47,10 +47,10 @@ class Zeroinf:
        
         ## log-likelihood for y = 0 and y >= 1
         loglik0 = np.log( phi + np.exp( log(1-phi) – mu ) ) 
-        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(Y, lambda=mu)
+        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, lambda=mu)
         ## collect and return
         loglik = sum(self.weights[self.Y0] @ loglik0[self.Y0]) + \
-            sum(self.weights[self.Y1] @ loglik1[self.Y1])
+            sum(self.weights[self.Y1] @ loglik1[self.Y1]) #weights need to be matrices
         return loglik
 
     def gradPoisson(self, parms):
@@ -58,7 +58,7 @@ class Zeroinf:
         ***Gradient likelihood for Zeroinf***
         '''
 		## count mean
-		eta = # X • parms[1:kx} + offsetx
+		eta = self.X @ parms[1:kx] + self.offsetx
 		mu = np.exp(eta)
 		## binary mean
 		etaz = # z • parms[{kx+1):(kx+kz)] + offsetz)
@@ -66,7 +66,7 @@ class Zeroinf:
 
 		## densities at 0
 		clogdens0 = -mu
-		dens0 = muz * (1 – Y1) + np.exp(np.log(1-muz) + clogdens0)
+		dens0 = muz * (1 – self.Y1) + np.exp(np.log(1-muz) + clogdens0)
 
 		## working residuals
 		if(Y1):
