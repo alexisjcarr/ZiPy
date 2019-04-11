@@ -71,7 +71,7 @@ class Zeroinf():
         clogdens0 = -mu
         dens0 = muz @ (1 – self.Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
 
-        ## mu.eta = d(mu)/d(eta); derivative of inverse link function
+        ## mu_eta = d(mu)/d(eta); derivative of inverse link function
         mu_eta = np.exp(etaz)/(1 + np.exp(etaz))**2
 
         ## working residuals
@@ -81,8 +81,7 @@ class Zeroinf():
             wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + exp.log(mu)))
 
         if(Y1):
-            wres_zero = -1/(1-muz) * mu_eta
-            
+            wres_zero = -1/(1-muz) * mu_eta 
         else:
             wres_zero = mu_eta - np.exp(clogdens0) * mu_eta/dens0 
 
