@@ -1,56 +1,59 @@
 import numpy as np
 import scipy as sp 
+import pandas as pd
 from scipy.special import logit, expit
 import patsy as pat
 
-class Zeroinf:
-    def _init_(self,formula, data, dist=’poisson’, link=’logit’):
+class Zeroinf():
+    def __init__(self, formula, data, dist='poisson', link='logit'):
         '''
         ***Constructor***
         '''
-        '''
-        The following variables are defined within formula_extraction
-
-        self.X # count data model regressors
-        self.Z # zero-inflated model regressors
-        self.Y 
-        '''
         self.formula = formula
         self.data = data
-        self.offsetz, self.offsetx = 0.0
-        self.weights = 1.0
-
+        
+        ## da matrices
+        self.X, self.Y, self.Z = self.formula_extraction(self.formula, self.data)
+        
         ## convenience variables
         self.n = len(self.Y)
         self.kx = self.X.shape[1] #number of columns in X matrix
         self.kz = self.Z.shape[1] #number of columns in Z matrix
-    	self.Y0 = self.Y <= 0        	
+        self.Y0 = self.Y <= 0  
         self.Y1 = self.Y > 0
-
-    def formula_extraction(self):
-        X_, Z_ = self.formula.str.split('|')
-        Z_ = '{}{}'.format(self.formula.str.split('~')[0],Z_)
-        Y_, self.X = pat.dmatrices(X_, self.data, return_type='dataframe')
-        self.Z = pat.dmatrices(Z_, self.data, return_type='dataframe')[1]
-        self.Y = np.squeeze(Y_)
         
+        ## offsets and weights
+        self.offsetz = np.repeat(0, self.n)
+        self.offsetx = np.repeat(0, self.n)
+        self.weights = np.repeat(1, self.n)
 
-    def ziPoisson(self, parms): 
-		'''
-		***Log-likelihood for Zeroinf***
+    @staticmethod
+    def formula_extraction(formula, data):
+        X_, Z_0 = formula.split('|')
+        Z_ = '{}~{}'.format(formula.split('~')[0],Z_0)
+        Y, X = pat.dmatrices(X_, data, return_type='dataframe')
+        Y = np.squeeze(Y)
+        Z = pat.dmatrices(Z_, data, return_type='dataframe')[1]
+
+        return X, Y, Z
+    
+    def ziPoisson(self, parms): # what are parms? Someone find out from R code
         '''
-		## count mean
+        ***Log-likelihood for Zeroinf***
+        '''
+        ## count mean
         mu = np.exp(self.X @ parms[1:self.kx] + self.offsetx) 
-		## binary mean
-        phi = expit(self.Z @ parms[(self.kx+1):(self.kx+self.kz)] + self.offsetz))
+        ## binary mean
+        phi = expit(self.Z @ parms[(self.kx+1):(self.kx+self.kz)] + self.offsetz)
         # expit is inverse link of logit
        
         ## log-likelihood for y = 0 and y >= 1
-        loglik0 = np.log( phi + np.exp( log(1-phi) – mu ) ) 
-        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, lambda=mu)
+        loglik0 = np.log( phi + np.exp( log(1-phi) - mu ) ) 
+        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, mu)
         ## collect and return
         loglik = sum(self.weights[self.Y0] @ loglik0[self.Y0]) + \
             sum(self.weights[self.Y1] @ loglik1[self.Y1]) #weights need to be matrices
+
         return loglik
 
     def gradPoisson(self, parms):
