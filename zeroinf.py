@@ -96,7 +96,7 @@ class Zeroinf():
         will return count model and binomial model from glm
         '''
 
-        return self.starting_values
+        return self.start_values
 
     def ml_estimation(self):
         '''
