@@ -78,8 +78,7 @@ class Zeroinf():
         if(Y1):
             wres_count = self.Y – mu
         else:
-            wres_count = -np.exp(-np.log(dens0) + log(1-muz) +\ 
-                clogdens0 + exp.log(mu)))
+            wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + exp.log(mu)))
 
         if(Y1):
             wres_zero = -1/(1-muz) * mu_eta
