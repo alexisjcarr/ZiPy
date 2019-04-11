@@ -93,14 +93,14 @@ class Zeroinf():
 
     def starting_values(self):
         '''
-        will return count model and bionomial model from glm
+        will return count model and binomial model from glm
         '''
 
         return self.starting_values
 
-    def ml_estimation:
+    def ml_estimation(self):
         '''
-        scipy.optimize.minimize
+        scipy.optimize.minimize stuff
         '''
         return ''
 
