@@ -91,6 +91,19 @@ class Zeroinf():
             # 1) wres_count * weights * X
             # 2) wres_zero * weights * Z
 
+    def starting_values(self):
+        '''
+        will return count model and bionomial model from glm
+        '''
+
+        return self.starting_values
+
+    def ml_estimation:
+        '''
+        scipy.optimize.minimize
+        '''
+        return ''
+
     def __repr__(self):
         '''
         change as needed for testing
