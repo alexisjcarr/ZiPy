@@ -60,34 +60,39 @@ class Zeroinf():
         '''
         ***Gradient likelihood for Zeroinf***
         '''
-		## count mean
-		eta = self.X @ parms[1:kx] + self.offsetx
-		mu = np.exp(eta)
-		## binary mean
-		etaz = # z • parms[{kx+1):(kx+kz)] + offsetz)
-		muz = # linkinv(etaz) # will probably need Jones help
+        ## count mean
+        eta = self.X @ parms[1:kx] + self.offsetx
+        mu = np.exp(eta)
+        ## binary mean
+        etaz = self.Z @ parms[(kx+1):(kx+kz)] + offsetz
+        muz = expit(etaz) 
 
-		## densities at 0
-		clogdens0 = -mu
-		dens0 = muz * (1 – self.Y1) + np.exp(np.log(1-muz) + clogdens0)
+        ## densities at 0
+        clogdens0 = -mu
+        dens0 = muz @ (1 – self.Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
 
-		## working residuals
-		if(Y1):
-			wres_count = Y – mu
-		else:
-			wres_count = -np.exp(-np.log(dens0) + log(1-muz) +\ 
-                clogdens0 + log(mu)))
+        ## mu.eta = d(mu)/d(eta); derivative of inverse link function
+        mu_eta = np.exp(etaz)/(1 + np.exp(etaz))**2
 
-		if(Y1):
-			wres_zero = -1/(1-muz)* #(linkobk$mu.eta(etaz))
-		else:
-			wres_zero = #(linkobj$mu.eta(etaz) – np.exp(clogdens0) * linkobj$mu.eta(etaz))/dens0) # looking for def for that
+        ## working residuals
+        if(Y1):
+            wres_count = self.Y – mu
+        else:
+            wres_count = -np.exp(-np.log(dens0) + log(1-muz) +\ 
+                clogdens0 + exp.log(mu)))
 
-		return # column sums of these two columns bound
-			# 1) wres_count * weights * X
-			# 2) wres_zero * weights * Z
+        if(Y1):
+            wres_zero = -1/(1-muz) * mu_eta
+            
+        else:
+            wres_zero = mu_eta - np.exp(clogdens0) * mu_eta/dens0 
+
+        return np.hstack((wres_count @ self.weights @ self.X), (wres_zero @ self.weights @ self.Z)) # likely incorrect, fix
+        # column sums of these two columns bound
+            # 1) wres_count * weights * X
+            # 2) wres_zero * weights * Z
 
     def __repr__(self):
         '''
-        part of the print function will go here
+        change as needed for testing
         '''
