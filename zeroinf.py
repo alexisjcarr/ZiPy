@@ -86,7 +86,8 @@ class Zeroinf():
         else:
             wres_zero = mu_eta - np.exp(clogdens0) * mu_eta/dens0 
 
-        return np.hstack((wres_count @ self.weights @ self.X), (wres_zero @ self.weights @ self.Z)) # likely incorrect, fix
+        return np.hstack((wres_count @ self.weights @ self.X),\ 
+                         (wres_zero @ self.weights @ self.Z)) # likely incorrect, fix
         # column sums of these two columns bound
             # 1) wres_count * weights * X
             # 2) wres_zero * weights * Z
