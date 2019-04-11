@@ -37,7 +37,7 @@ class Zeroinf():
 
         return X, Y, Z
     
-    def ziPoisson(self, parms): # what are parms? Someone find out from R code
+    def ziPoisson(self, parms): # parms supplied by self.mlEstimation.
         '''
         ***Log-likelihood for Zeroinf***
         '''
@@ -91,14 +91,14 @@ class Zeroinf():
             # 1) wres_count * weights * X
             # 2) wres_zero * weights * Z
 
-    def starting_values(self):
+    def startingValues(self):
         '''
         will return count model and binomial model from glm
         '''
 
         return self.start_values
 
-    def ml_estimation(self):
+    def mlEstimation(self):
         '''
         scipy.optimize.minimize stuff
         '''
