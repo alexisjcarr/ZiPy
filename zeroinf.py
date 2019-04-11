@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.special import logit, expit
 import patsy as pat
 
-class Zeroinf():
+class Zeroinf:
     def __init__(self, formula, data, dist='poisson', link='logit'):
         '''
         ***Constructor***
