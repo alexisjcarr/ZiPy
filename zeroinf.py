@@ -105,7 +105,7 @@ class Zeroinf:
             family = sm.genmod.families.family.Binomial(link=sm.genmod.families.links.logit), weights = self.weights,\
                 offset = self.offsetz).fit()
 
-        self.startValues =  {'zeroStartValues': modelZero.params,\
+        return self.startValues =  {'zeroStartValues': modelZero.params,\
                              'countStartValues': modelCount.params}
 
     def mlEstimation(self):
