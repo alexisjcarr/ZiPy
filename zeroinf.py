@@ -4,7 +4,6 @@ import pandas as pd
 from scipy.special import logit, expit
 import patsy as pat
 import statsmodels.api as sm
-from statsmodels.genmod.families import Poisson, Binomial
 
 class Zeroinf:
     def __init__(self, formula, data, dist='poisson', link='logit'):
@@ -13,6 +12,7 @@ class Zeroinf:
         '''
         self.formula = formula
         self.data = data
+        self.call = 'Zeroinf(formula = '+ self.formula + ', data = df, dist = \'poisson\', link = \'logit\')'
         
         ## da matrices
         self.X, self.Y, self.Z = self.formula_extraction(self.formula, self.data)
@@ -23,8 +23,8 @@ class Zeroinf:
         self.kz = self.Z.shape[1] #number of columns in Z matrix
         self.Y0 = self.Y <= 0  
         self.Y1 = self.Y > 0
-        self.theta = NULL
-        self.log_theta = NULL
+        self.theta = None
+        self.log_theta = None
         
         ## offsets and weights
         self.offsetz = np.repeat(0, self.n)
@@ -73,23 +73,23 @@ class Zeroinf:
 
         ## densities at 0
         clogdens0 = -mu
-        dens0 = muz @ (1 – self.Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
+        dens0 = muz @ (1 - self.Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
 
         ## mu_eta = d(mu)/d(eta); derivative of inverse link function
         mu_eta = np.exp(etaz)/(1 + np.exp(etaz))**2
 
         ## working residuals
         if(Y1):
-            wres_count = self.Y – mu
+            wres_count = self.Y - mu
         else:
-            wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + exp.log(mu)))
+            wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + exp.log(mu))
 
         if(Y1):
             wres_zero = -1/(1-muz) * mu_eta 
         else:
             wres_zero = mu_eta - np.exp(clogdens0) * mu_eta/dens0 
 
-        return np.hstack((wres_count @ self.weights @ self.X),\ 
+        return np.hstack((wres_count @ self.weights @ self.X),\
                          (wres_zero @ self.weights @ self.Z)) # likely incorrect, fix
         # column sums of these two columns bound
             # 1) wres_count * weights * X
@@ -99,16 +99,14 @@ class Zeroinf:
         '''
         Returns count model and binomial model from glm
         '''
-        modelCount = sm.GLM(endog = self.Y, exog = self.X, family = Poisson(),\
-             weights = self.weights, offset = self.offsetx).fit()
-        modelZero = sm.GLM(endog = self.Y0.astype(int), exog = self.Z,\
-            family = Binomial(link=logit), weights = self.weights,\
-                 offset = self.offsetz).fit()
+        self.modelCount = sm.GLM(endog = self.Y, exog = self.X, family = sm.genmod.families.family.Poisson(),\
+            weights = self.weights, offset = self.offsetx).fit()
+        self.modelZero = sm.GLM(endog = self.Y0.astype(int), exog = self.Z,\
+            family = sm.genmod.families.family.Binomial(link=sm.genmod.families.links.logit), weights = self.weights,\
+                offset = self.offsetz).fit()
 
         self.startValues =  {'zeroStartValues': modelZero.params,\
-            'countStartValues': modelCount.params}
-
-        return self.startValues
+                             'countStartValues': modelCount.params}
 
     def mlEstimation(self):
         fun = self.ziPoisson
@@ -121,6 +119,9 @@ class Zeroinf:
              options = options) #returns object OptimizeResult
 
         ## coefficients and covariances
+        coef = fit.x
+
+
         '''
         coefc <- fit$par[1:kx]
         names(coefc) <- names(start$count) <- colnames(X)
@@ -181,6 +182,20 @@ class Zeroinf:
         return {} # return the hell out of that dictionary
 
     def __repr__(self):
-        '''
-        Change as needed for testing
-        '''
+        out = 'Call: \n'
+        out += self.call
+        out += '\n\nPearson residuals: \n'
+        out += 'Min      1Q      Median      3Q      Max\n'
+        out += '<min, etc>\n'
+        out += 'Count model coefficients (poisson with log link):\n'
+        out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n'
+        out += '(Intercept)\n'
+        out += 'femWomen\n'
+        out += 'marMarried\n'
+        out += 'kid5\n'
+        out += 'phd\n'
+        out += 'ment\n\n'
+        out += 'Number of iterations in BFGS optimization: <extract this>\n'
+        out += 'Log-likelihood: <extract this too>'
+        
+        return out
