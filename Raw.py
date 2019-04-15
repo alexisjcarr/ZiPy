@@ -44,3 +44,14 @@ def custmin(f, x0, args=(), maxfev=None, stepsize=0.1,
 # >>> b = [5,7,9]
 # >>> expandgrid(a, b)
 #{'Var1': [1, 1, 1, 2, 2, 2, 3, 3, 3], 'Var2': [5, 7, 9, 5, 7, 9, 5, 7, 9]}
+
+# or 
+
+# def expand_grid(data_dict):
+#     """Create a dataframe from every combination of given values."""
+#     rows = itertools.product(*data_dict.values())
+#     return pd.DataFrame.from_records(rows, columns=data_dict.keys())
+# For this code to work, you will need the following two imports:
+
+# import itertools
+# import pandas as pd
