@@ -34,3 +34,15 @@ def custmin(f, x0, args=(), maxfev=None, stepsize=0.1,
 ...         maxiter=100, callback=None, **options):
 
 
+# In order to apply regression using all possible combinations of predictors. Similar to import.grid function in r 
+#import itertools
+# def expandgrid(*itrs):
+#    product = list(itertools.product(*itrs))
+#    return {'Var{}'.format(i+1):[x[i] for x in product] for i in range(len(itrs))}
+
+# >>> a = [1,2,3]
+# >>> b = [5,7,9]
+# >>> expandgrid(a, b)
+
+
+{'Var1': [1, 1, 1, 2, 2, 2, 3, 3, 3], 'Var2': [5, 7, 9, 5, 7, 9, 5, 7, 9]}
