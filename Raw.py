@@ -34,7 +34,7 @@ def custmin(f, x0, args=(), maxfev=None, stepsize=0.1,
 ...         maxiter=100, callback=None, **options):
 
 
-# In order to apply regression using all possible combinations of predictors. Similar to import.grid function in r 
+# In order to apply regression using all possible combinations of predictors. Similar to expand.grid function in r 
 #import itertools
 # def expandgrid(*itrs):
 #    product = list(itertools.product(*itrs))
