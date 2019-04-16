@@ -30,7 +30,7 @@ class Zeroinf:
         self.offsetz = np.repeat(0, self.n)
         self.offsetx = np.repeat(0, self.n)
         self.weights = np.repeat(1, self.n)
-
+        
     @staticmethod
     def formula_extraction(formula, data):
         X_, Z_0 = formula.split('|')
@@ -41,146 +41,101 @@ class Zeroinf:
 
         return X, Y, Z
     
-    def ziPoisson(self, parms): # parms supplied by self.mlEstimation.
+    def ziPoisson(parms): # parms supplied by self.mlEstimation.
         '''
         Log-likelihood for ZIP Model
         '''
         ## count mean
-        mu = np.exp(self.X @ parms[1:self.kx] + self.offsetx) 
+        mu = np.exp(X @ parms[np.arange(kx)] + offsetx) 
         ## binary mean
-        phi = expit(self.Z @ parms[(self.kx+1):(self.kx+self.kz)] + self.offsetz)
+        phi = expit(Z @ parms[np.arange((kx),(kx+kz))] + offsetz)
         # expit is inverse link of logit
-       
+        
         ## log-likelihood for y = 0 and y >= 1
-        loglik0 = np.log( phi + np.exp( log(1-phi) - mu ) ) 
-        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, mu)
+        loglik0 = np.log( phi + np.exp( np.log(1-phi) - mu ) ) 
+        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(Y, mu)
         ## collect and return
-        loglik = sum(self.weights[self.Y0] @ loglik0[self.Y0]) + \
-            sum(self.weights[self.Y1] @ loglik1[self.Y1]) #weights need to be matrices
+        loglik = weights[Y0] @ loglik0[Y0] + weights[Y1]@loglik1[Y1] 
 
         return loglik
 
-    def gradPoisson(self, parms):
+    def gradPoisson(parms):
         '''
         Gradient function for ZIP Model
         '''
         ## count mean
-        eta = self.X @ parms[1:kx] + self.offsetx
+        eta = X @ parms[np.arange(kx)] + offsetx
         mu = np.exp(eta)
         ## binary mean
-        etaz = self.Z @ parms[(kx+1):(kx+kz)] + offsetz
+        etaz = Z @ parms[np.arange((kx),(kx+kz))] + offsetz
         muz = expit(etaz) 
 
         ## densities at 0
         clogdens0 = -mu
-        dens0 = muz @ (1 - self.Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
+        dens0 = muz * (1 - Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
 
         ## mu_eta = d(mu)/d(eta); derivative of inverse link function
         mu_eta = np.exp(etaz)/(1 + np.exp(etaz))**2
-
+        
         ## working residuals
-        if(Y1):
-            wres_count = self.Y - mu
-        else:
-            wres_count = -np.exp(-np.log(dens0) + log(1-muz) + clogdens0 + exp.log(mu))
+        wres_count = np.where(Y1, Y - mu, -np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0))
+        wres_zero = np.where(Y1, -1/(1-muz) * mu_eta, mu_eta - np.exp(clogdens0) * (mu_eta)/dens0)
 
-        if(Y1):
-            wres_zero = -1/(1-muz) * mu_eta 
-        else:
-            wres_zero = mu_eta - np.exp(clogdens0) * mu_eta/dens0 
-
-        return np.hstack((wres_count @ self.weights @ self.X),\
-                         (wres_zero @ self.weights @ self.Z)) # likely incorrect, fix
-        # column sums of these two columns bound
-            # 1) wres_count * weights * X
-            # 2) wres_zero * weights * Z
+        return np.hstack((np.expand_dims(wres_count*weights,axis=1)*X, \
+                    np.expand_dims(wres_zero*weights,axis=1)*Z)).sum(axis=0)
 
     def startingValues(self):
         '''
         Returns count model and binomial model from glm
         '''
-        self.modelCount = sm.GLM(endog = self.Y, exog = self.X, family = sm.genmod.families.family.Poisson(),\
-            weights = self.weights, offset = self.offsetx).fit()
-        self.modelZero = sm.GLM(endog = self.Y0.astype(int), exog = self.Z,\
+        modelCount = sm.GLM(endog = self.Y, exog = self.X, \
+            family = sm.genmod.families.family.Poisson(),\
+                weights = self.weights, offset = self.offsetx).fit()
+        selfmodelZero = sm.GLM(endog = self.Y0.astype(int), exog = self.Z,\
             family = sm.genmod.families.family.Binomial(link=sm.genmod.families.links.logit), weights = self.weights,\
                 offset = self.offsetz).fit()
-
-        return self.startValues =  {'zeroStartValues': modelZero.params,\
+        
+        self.startValues =  {'zeroStartValues': modelZero.params,\
                              'countStartValues': modelCount.params}
+
+        return self.startValues
 
     def mlEstimation(self):
         fun = self.ziPoisson
-        x0 = self.startValues # TODO (extracted)
+        x0 = np.hstack((self.startValues['countStartValues'].values,\
+            self.startValues['zeroStartValues'].values))
         method = 'BFGS' #(per paper)
         jac = self.gradPoisson
-        options = {'maxiter': 10000, 'disp': True}
+        options = {'maxiter': 10000, 'disp': False}
 
-        self.fit = sp.optimize.minimize(fun = fun, x0 = x0, method = method, jac = jac,\
-             options = options) #returns object OptimizeResult
+        self.fit_ = sp.optimize.minimize(fun = fun, x0 = x0, method = method, jac = jac,\
+            options = options) #returns object OptimizeResult
 
         ## coefficients and covariances
-        coef = fit.x
-
-
-        '''
-        coefc <- fit$par[1:kx]
-        names(coefc) <- names(start$count) <- colnames(X)
-        coefz <- fit$par[(kx+1):(kx+kz)]
-        names(coefz) <- names(start$zero) <- colnames(Z)
-
-        colnames(vc) <- rownames(vc) <- c(paste("count", colnames(X), sep = "_"), \
-            paste("zero",  colnames(Z), sep = "_"))
-        '''
-
-        ## fitted and residuals
-        '''
-        mu <- exp(X %*% coefc + offsetx)[,1]
-        phi <- linkinv(Z %*% coefz + offsetz)[,1]
-        Yhat <- (1-phi) * mu
-        res <- sqrt(weights) * (Y - Yhat)
-        '''
-
-        ## effective observations
-        '''
-        nobs <- sum(weights > 0) ## = n - sum(weights == 0)
-
-        rval <- list(coefficients = list(count = coefc, zero = coefz),
-            residuals = res,
-            fitted.values = Yhat,
-            optim = fit,
-            method = method,
-            control = ocontrol,
-            start = start,
-            weights = if(identical(as.vector(weights), rep.int(1L, n))) NULL else weights,
-            offset = list(count = if(identical(offsetx, rep.int(0, n))) NULL else offsetx,
-            zero = if(identical(offsetz, rep.int(0, n))) NULL else offsetz),
-            n = nobs,
-            df.null = nobs - 2,
-            df.residual = nobs - (kx + kz + (dist == "negbin")),
-            terms = list(count = mtX, zero = mtZ, full = mt),
-            theta = theta,
-            SE.logtheta = SE.logtheta,
-            loglik = fit$value,
-            vcov = vc,
-            dist = dist,
-            link = linkstr,
-            linkinv = linkinv,
-            converged = fit$convergence < 1,
-            call = cl,
-            formula = ff,
-            levels = .getXlevels(mt, mf),
-            contrasts = list(count = attr(X, "contrasts"), zero = attr(Z, "contrasts"))
-        )
-        if(model) rval$model <- mf
-        if(y) rval$y <- Y
-        if(x) rval$x <- list(count = X, zero = Z)
+        coefc_keys = []
+        for key in self.X.columns.values:
+            coefc_keys.append(key)
+        coefc_values = []
+        for value in self.fit_.x[0:kx]:
+            coefc_values.append(value)
             
-        class(rval) <- "zeroinfl"
-        return(rval)
-        }
-        '''
-        return {} # return the hell out of that dictionary
+        coefc = dict(zip(coefc_keys, coefc_values))
 
+        coefz_keys = []
+        coefz_values = []
+        for key in self.Z.columns.values:
+            coefz_keys.append(key)
+        for value in self.fit_.x[kx:kx+kz]:
+            coefz_values.append(value)
+            
+        coefz = dict(zip(coefz_keys, coefz_values))
+
+        ## fitted and residuals TODO
+
+        ## effective observations TODO
+
+        print(coefc)
+    
     def __repr__(self):
         out = 'Call: \n'
         out += self.call
@@ -188,14 +143,14 @@ class Zeroinf:
         out += 'Min      1Q      Median      3Q      Max\n'
         out += '<min, etc>\n'
         out += 'Count model coefficients (poisson with log link):\n'
-        out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n'
-        out += '(Intercept)\n'
-        out += 'femWomen\n'
-        out += 'marMarried\n'
-        out += 'kid5\n'
-        out += 'phd\n'
-        out += 'ment\n\n'
+        out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n\n'
+        out += f'{self.coefc.keys()}\n {self.coefc.values()}\n'
         out += 'Number of iterations in BFGS optimization: <extract this>\n'
         out += 'Log-likelihood: <extract this too>'
         
         return out
+
+        
+df = pd.read_csv('~/Downloads/bioChemists.csv')
+formula_ = 'art ~ fem + mar + phd + kid5 + ment | 1'
+Zeroinf(data=df, formula=formula_)
