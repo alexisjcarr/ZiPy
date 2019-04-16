@@ -156,6 +156,6 @@ class Zeroinf:
         return out
 
         
-df = pd.read_csv('~/Downloads/bioChemists.csv')
-formula_ = 'art ~ fem + mar + phd + kid5 + ment | 1'
-Zeroinf(data=df, formula=formula_)
+#df = pd.read_csv('~/Downloads/bioChemists.csv') from https://vincentarelbundock.github.io/Rdatasets/csv/pscl/bioChemists.csv
+#formula_ = 'art ~ fem + mar + phd + kid5 + ment | 1'
+#Zeroinf(data=df, formula=formula_)
