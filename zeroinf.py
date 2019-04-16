@@ -31,6 +31,13 @@ class Zeroinf:
         self.offsetx = np.repeat(0, self.n)
         self.weights = np.repeat(1, self.n)
         
+        self.modelZero, self.modelCount = self.startingValues(self.X, self.Y, self.Z, self.weights, self.offsetx, self.Y0, self.offsetz)
+        self.modelParams = {'zeroStartValues': self.modelZero.params,'countStartValues': self.modelCount.params}
+        
+        self.coefc, self.coefz = self.mlEstimation(x0 = np.hstack((self.modelParams['countStartValues'].values,\
+            self.modelParams['zeroStartValues'].values)))
+        
+                
     @staticmethod
     def formula_extraction(formula, data):
         X_, Z_0 = formula.split('|')
@@ -41,112 +48,110 @@ class Zeroinf:
 
         return X, Y, Z
     
-    def ziPoisson(parms): # parms supplied by self.mlEstimation.
+    def ziPoisson(self, parms): # parms supplied by self.mlEstimation.
         '''
         Log-likelihood for ZIP Model
         '''
         ## count mean
-        mu = np.exp(X @ parms[np.arange(kx)] + offsetx) 
+        mu = np.exp(self.X @ parms[np.arange(self.kx)] + self.offsetx) 
         ## binary mean
-        phi = expit(Z @ parms[np.arange((kx),(kx+kz))] + offsetz)
+        phi = expit(self.Z @ parms[np.arange((self.kx),(self.kx+self.kz))] + self.offsetz)
         # expit is inverse link of logit
         
         ## log-likelihood for y = 0 and y >= 1
         loglik0 = np.log( phi + np.exp( np.log(1-phi) - mu ) ) 
-        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(Y, mu)
+        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, mu)
         ## collect and return
-        loglik = weights[Y0] @ loglik0[Y0] + weights[Y1]@loglik1[Y1] 
+        loglik = self.weights[self.Y0] @ loglik0[self.Y0] + self.weights[self.Y1]@loglik1[self.Y1] 
 
         return loglik
 
-    def gradPoisson(parms):
+    def gradPoisson(self, parms):
         '''
         Gradient function for ZIP Model
         '''
         ## count mean
-        eta = X @ parms[np.arange(kx)] + offsetx
+        eta = self.X @ parms[np.arange(self.kx)] + self.offsetx
         mu = np.exp(eta)
         ## binary mean
-        etaz = Z @ parms[np.arange((kx),(kx+kz))] + offsetz
+        etaz = self.Z @ parms[np.arange((self.kx),(self.kx+self.kz))] + self.offsetz
         muz = expit(etaz) 
 
         ## densities at 0
         clogdens0 = -mu
-        dens0 = muz * (1 - Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
+        dens0 = muz * (1 - self.Y1.astype(float)) + np.exp(np.log(1-muz) + clogdens0)
 
         ## mu_eta = d(mu)/d(eta); derivative of inverse link function
         mu_eta = np.exp(etaz)/(1 + np.exp(etaz))**2
         
         ## working residuals
-        wres_count = np.where(Y1, Y - mu, -np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0))
-        wres_zero = np.where(Y1, -1/(1-muz) * mu_eta, mu_eta - np.exp(clogdens0) * (mu_eta)/dens0)
+        wres_count = np.where(self.Y1, self.Y - mu, -np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0))
+        wres_zero = np.where(self.Y1, -1/(1-muz) * mu_eta, mu_eta - np.exp(clogdens0) * (mu_eta)/dens0)
 
-        return np.hstack((np.expand_dims(wres_count*weights,axis=1)*X, \
-                    np.expand_dims(wres_zero*weights,axis=1)*Z)).sum(axis=0)
+        return np.hstack((np.expand_dims(wres_count*self.weights,axis=1)*self.X, \
+                    np.expand_dims(wres_zero*self.weights,axis=1)*self.Z)).sum(axis=0)
 
-    def startingValues(self):
+    def startingValues(self, X, Y, Z, weights, offsetx, Y0, offsetz): ## have this called in the constructor and return those variables
         '''
         Returns count model and binomial model from glm
         '''
         modelCount = sm.GLM(endog = self.Y, exog = self.X, \
-            family = sm.genmod.families.family.Poisson(),\
+            family = sm.genmod.families.family.Poisson(link=sm.genmod.families.links.log),\
                 weights = self.weights, offset = self.offsetx).fit()
-        selfmodelZero = sm.GLM(endog = self.Y0.astype(int), exog = self.Z,\
+        modelZero = sm.GLM(endog = self.Y0.astype(int), exog = self.Z,\
             family = sm.genmod.families.family.Binomial(link=sm.genmod.families.links.logit), weights = self.weights,\
                 offset = self.offsetz).fit()
         
-        self.startValues =  {'zeroStartValues': modelZero.params,\
-                             'countStartValues': modelCount.params}
+        #self.startValues =  {'zeroStartValues': modelZero.params,\
+         #                    'countStartValues': modelCount.params}
 
-        return self.startValues
+        return modelZero, modelCount
 
-    def mlEstimation(self):
+    def mlEstimation(self, x0): ## have this called in the constructor and return those variables
         fun = self.ziPoisson
-        x0 = np.hstack((self.startValues['countStartValues'].values,\
-            self.startValues['zeroStartValues'].values))
-        method = 'BFGS' #(per paper)
         jac = self.gradPoisson
+        method = 'BFGS'
         options = {'maxiter': 10000, 'disp': False}
 
-        self.fit_ = sp.optimize.minimize(fun = fun, x0 = x0, method = method, jac = jac,\
+        fit_ = sp.optimize.minimize(fun = fun, x0 = x0, method = method, jac = jac,\
             options = options) #returns object OptimizeResult
 
         ## coefficients and covariances
         coefc_keys = []
+        coefc_values = []
         for key in self.X.columns.values:
             coefc_keys.append(key)
-        coefc_values = []
-        for value in self.fit_.x[0:kx]:
+        for value in fit_.x[0:self.kx]:
             coefc_values.append(value)
-            
         coefc = dict(zip(coefc_keys, coefc_values))
 
         coefz_keys = []
         coefz_values = []
         for key in self.Z.columns.values:
             coefz_keys.append(key)
-        for value in self.fit_.x[kx:kx+kz]:
+        for value in fit_.x[self.kx:self.kx+self.kz]:
             coefz_values.append(value)
-            
         coefz = dict(zip(coefz_keys, coefz_values))
 
         ## fitted and residuals TODO
 
         ## effective observations TODO
 
-        print(coefc)
+        return coefc, coefz
     
     def __repr__(self):
         out = 'Call: \n'
-        out += self.call
-        out += '\n\nPearson residuals: \n'
-        out += 'Min      1Q      Median      3Q      Max\n'
-        out += '<min, etc>\n'
+        out += self.call+ '\n\n'
+        #out += '\n\nPearson residuals: \n'
+        #out += 'Min      1Q      Median      3Q      Max\n'
+        #out += '<min, etc>\n'
         out += 'Count model coefficients (poisson with log link):\n'
-        out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n\n'
-        out += f'{self.coefc.keys()}\n {self.coefc.values()}\n'
-        out += 'Number of iterations in BFGS optimization: <extract this>\n'
-        out += 'Log-likelihood: <extract this too>'
+        #out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n\n'
+        out += str(self.coefc) +'\n\n'
+        out += 'Zero-inflation model coefficients (binomial with logit link):\n'
+        out += str(self.coefz)
+        #out += 'Number of iterations in BFGS optimization: <extract this>\n'
+        #out += 'Log-likelihood: <extract this too>'
         
         return out
 
