@@ -86,7 +86,7 @@ class Zeroinf:
         
         ## working residuals
         wres_count = np.where(self.Y1, self.Y - mu, -np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0))
-        wres_zero = np.where(self.Y1, -1/(1-muz) * mu_eta, mu_eta - np.exp(clogdens0) * (mu_eta)/dens0)
+        wres_zero = np.where(self.Y1, -1/(1-muz) * mu_eta, mu_eta - np.exp(clogdens0) * (mu_eta)/dens0 + np.log(mu))
 
         return np.hstack((np.expand_dims(wres_count*self.weights,axis=1)*self.X, \
                     np.expand_dims(wres_zero*self.weights,axis=1)*self.Z)).sum(axis=0)
