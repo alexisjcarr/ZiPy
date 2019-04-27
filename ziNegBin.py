@@ -73,13 +73,11 @@ def gradNegBin(self, parms):
                                                                         + np.log(theta) - np.log(mu + theta) + np.log(mu)))
         wres_zero = np.where(self.Y1, -1/(1-muz) * mu_eta, mu_eta - np.exp(clogdens0) * (mu_eta)/dens0) 
         
-        wres_zero <- ifelse(Y1, -1/(1-muz) * linkobj$mu.eta(etaz), (linkobj$mu.eta(etaz) - exp(clogdens0) * linkobj$mu.eta(etaz))/dens0)
-        
         wres_theta = theta * np.where(self.Y1, sp.special.digamma(self.Y + theta) - sp.special.digamma(theta) + np.log(theta) 
                                       - np.log(mu + theta) + 1 - (self.Y + theta)/(mu+theta), np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0)
                                       * (np.log(theta) - np.log(mu + theta) + 1 - theta/(mu+theta)))
         ######################
-        return np.hstack((np.expand_dims(wres_count*self.weights,axis=1)*self.X, \
+        return np.hstack((np.expand_dims(wres_count*self.weights,axis=1)*self.X,
                     np.expand_dims(wres_zero*self.weights,axis=1)*self.Z), np.expand_dims(wres_theta,axis=1).sum(axis=0))
         
         
