@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class zipois:
-    def __init__(self, formula, data, dist='poisson', link='logit', **kwargs):
+    def __init__(self, formula, data, link='logit'):
         '''
         Class Constructor
         '''
