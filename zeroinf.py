@@ -44,7 +44,7 @@ class Zeroinf:
                             'countStartValues': self.modelCount.params}
 
         self.coefc_keys, self.coefc_values, self.coefz_keys,\
-            self.coefz_values, self.pearson_res = \
+            self.coefz_values = \
             self.mlEstimation(x0=np.hstack((self.modelParams['countStartValues'].values,
                                             self.modelParams['zeroStartValues'].values)))
 
