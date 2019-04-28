@@ -22,5 +22,5 @@ For this project, we aim to accomplish the following goals. **Goals I** and **II
 * zero‐inflated geometric regression
 
 ## Sources
-* Jackman, S., Tahk, A., Zeileis, A., Maimone, C., Fearon, J., Meers, Z., ... & Imports, M. A. S. S. (2017). Package ‘pscl’. See http://github. com/atahk/pscl.  
+* Jackman, S., Tahk, A., Zeileis, A., Maimone, C., Fearon, J., Meers, Z., ... & Imports, M. A. S. S. (2017). Package ‘pscl’. See http://github.com/atahk/pscl.  
 * Zeileis, A., Kleiber, C., & Jackman, S. (2008). Regression models for count data in R. Journal of statistical software, 27(8), 1‐25.
