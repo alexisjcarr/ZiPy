@@ -1,4 +1,3 @@
-
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -9,7 +8,6 @@ import statsmodels as sfm
 import scipy.stats as st
 import warnings
 warnings.filterwarnings('ignore')
-
 
 class zipois:
     def __init__(self, formula, data, dist='poisson', link='logit', **kwargs):
@@ -155,13 +153,13 @@ class zipois:
 #         coefz = dict(zip(coefz_keys, coefz_values))
 
         ## fitted and residuals
-        mu = np.exp(np.dot(self.X, coefc_values) + self.offsetx)
-        phi = expit(np.dot(self.Z, coefz_values) + self.offsetz)
-        yhat = (1 - phi) * mu
-        res = np.sqrt(self.weights) * (self.Y - yhat)
+        # mu = np.exp(np.dot(self.X, coefc_values) + self.offsetx)
+        # phi = expit(np.dot(self.Z, coefz_values) + self.offsetz)
+        # yhat = (1 - phi) * mu
+        # res = np.sqrt(self.weights) * (self.Y - yhat)
 
-        # effective observations
-        nobs = np.sum(self.weights > 0)
+        # # effective observations
+        # nobs = np.sum(self.weights > 0)
 
         # Pearson residuals
         # pearson_res = np.round(st.mstats.mquantiles(res,
