@@ -4,11 +4,14 @@ import pandas as pd
 from scipy.special import logit, expit
 import patsy as pat
 import statsmodels.api as sm
+import statsmodels as sfm
 import scipy.stats as st
+import warnings
+warnings.filterwarnings('ignore')
 
 
 class Zeroinf:
-    def __init__(self, formula, data, dist='poisson', link='logit'):
+    def __init__(self, formula, data, dist='poisson', link='logit', **kwargs):
         '''
         Class Constructor
         '''
@@ -18,7 +21,7 @@ class Zeroinf:
             ', data = df, dist = \'poisson\', link = \'logit\')'
 
         # da matrices
-        self.X, self.Y, self.Z = self.formula_extraction(
+        self.X, self.Y, self.Z = self.formula_extraction( \
             self.formula, self.data)
 
         # convenience variables
@@ -55,27 +58,29 @@ class Zeroinf:
 
         return X, Y, Z
 
-    def ziPoisson(self, parms):  # parms supplied by self.mlEstimation.
+    # parms supplied by self.mlEstimation.
+    def ziPoisson(self, parms, sign=1.0):
         '''
         Log-likelihood for ZIP Model
         '''
         # count mean
-        mu = np.exp(self.X @ parms[np.arange(self.kx)] + self.offsetx)
+        mu = np.exp(self.X @ parms[np.arange(self.kx)]) + self.offsetx
+
         # binary mean
-        phi = expit(self.Z @ parms[np.arange(
+        phi = expit(self.Z @ parms[np.arange( \
             (self.kx), (self.kx+self.kz))] + self.offsetz)
         # expit is inverse link of logit
 
         # log-likelihood for y = 0 and y >= 1
         loglik0 = np.log(phi + np.exp(np.log(1-phi) - mu))
-        loglik1 = np.log(1-phi) + sp.stats.poisson.pmf(self.Y, mu)
+        loglik1 = np.log(1-phi) + sp.stats.poisson.logpmf(self.Y, mu)
         # collect and return
         loglik = self.weights[self.Y0] @ loglik0[self.Y0] + \
-            self.weights[self.Y1]@loglik1[self.Y1]
+            self.weights[self.Y1] @ loglik1[self.Y1]
 
-        return loglik
+        return sign*loglik
 
-    def gradPoisson(self, parms):
+    def gradPoisson(self, parms, sign=1.0):
         '''
         Gradient function for ZIP Model
         '''
@@ -93,28 +98,28 @@ class Zeroinf:
             np.exp(np.log(1-muz) + clogdens0)
 
         # mu_eta = d(mu)/d(eta); derivative of inverse link function
-        mu_eta = np.exp(etaz)/(1 + np.exp(etaz))**2
+        mu_eta = (np.exp(-etaz)/(1 + np.exp(etaz))**2)
 
         # working residuals
-        wres_count = np.where(self.Y1, self.Y - mu, - \
-                              np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0))
-        wres_zero = np.where(self.Y1, -1/(1-muz) * mu_eta, mu_eta - \
-                             np.exp(clogdens0) * (mu_eta)/dens0 + np.log(mu))
+        wres_count = np.where(self.Y1, self.Y - mu,\
+                              -np.exp(-np.log(dens0) + np.log(1-muz) + clogdens0 + np.log(mu)))
+        wres_zero = np.where(self.Y1, -1/(1-muz) * mu_eta, (mu_eta - \
+                                                            np.exp(clogdens0) * mu_eta)/dens0)
 
-        return np.hstack((np.expand_dims(wres_count*self.weights, axis=1)*self.X, \
-                          np.expand_dims(wres_zero*self.weights, axis=1)*self.Z)).sum(axis=0)
+        return sign*(np.hstack((np.expand_dims(wres_count*self.weights, axis=1)*self.X,\
+                                np.expand_dims(wres_zero*self.weights, axis=1)*self.Z)).sum(axis=0))
 
     # have this called in the constructor and return those variables
     def startingValues(self, X, Y, Z, weights, offsetx, Y0, offsetz):
         '''
         Returns count model and binomial model from glm
         '''
-        modelCount = sm.GLM(endog=self.Y, exog=self.X,
-                            family=sm.genmod.families.family.Poisson( \
-                                link=sm.genmod.families.links.log), \
-                            weights=self.weights, offset=self.offsetx).fit()
-        modelZero = sm.GLM(endog=self.Y0.astype(int), exog=self.Z, \
-                           family=sm.genmod.families.family.Binomial(link=sm.genmod.families.links.logit), weights=self.weights, \
+        modelCount = sm.GLM(endog=self.Y, exog=self.X,\
+                            family=sm.genmod.families.Poisson(\
+                                link=sm.genmod.families.links.log),\
+                            freq_weights=self.weights, offset=self.offsetx).fit()
+        modelZero = sm.GLM(endog=self.Y0.astype(int), exog=self.Z,\
+                           family=sm.genmod.families.Binomial(link=sm.genmod.families.links.logit), freq_weights=self.weights,\
                            offset=self.offsetz).fit()
 
         # self.startValues =  {'zeroStartValues': modelZero.params,\
@@ -125,11 +130,11 @@ class Zeroinf:
     def mlEstimation(self, x0):  # have this called in the constructor and return those variables
         fun = self.ziPoisson
         jac = self.gradPoisson
-        method = 'BFGS'
-        options = {'maxiter': 10000, 'disp': False}
+        method = 'Nelder-Mead'
+        options = {'maxiter': 10000, 'disp': True}
 
-        fit_ = sp.optimize.minimize(fun=fun, x0=x0, method=method, jac=jac,\
-                                    options=options)  # returns object OptimizeResult
+        fit_ = sp.optimize.minimize(fun, x0=x0, method=method, jac=jac,\
+                                    options=options, args=(-1.0,))  # returns object OptimizeResult
 
         ## coefficients and covariances
         coefc_keys = []
@@ -158,36 +163,41 @@ class Zeroinf:
         nobs = np.sum(self.weights > 0)
 
         # Pearson residuals
-        pearson_res = np.round(st.mstats.mquantiles(res, \
-                                                    prob=[0, 0.25, 0.5, 0.75, 1.0]), 5)
+        # pearson_res = np.round(st.mstats.mquantiles(res,
+        #                                             prob=[0, 0.25, 0.5, 0.75, 1.0]), 5)
 
-        return coefc_keys, coefc_values, coefz_keys, coefz_values, pearson_res
+        return coefc_keys, coefc_values, coefz_keys, coefz_values
 
     def __repr__(self):
         print('Call:')
         print(self.call + '\n')
-        print('Pearson residuals:')
-        print('Min\t  1Q\t     Median\t3Q\t Max')
-        print(*self.pearson_res, sep=' | ')
-        print('\n')
+#         print('Pearson residuals:')
+#         print('Min\t  1Q\t     Median\t3Q\t Max')
+#         print(*self.pearson_res, sep=' | ')
+#         print('\n')
         print('Count model coefficients (poisson with log link):')
         #out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n\n'
-        
-        fmt = '%-8s%-20s%s'
-        print(fmt % ('', 'Variable', 'Estimate'))
+
+        fmt = '%-20s%s%s'
+        print(fmt % ('', '', 'Estimate'))
         for i, (key, value) in enumerate(zip(self.coefc_keys, self.coefc_values)):
-            print(fmt % (i, key, value))
+            print(fmt % (key, '', value))
         print('\n')
-    
+
         print('Zero-inflation model coefficients (binomial with logit link):')
-        print(fmt % ('', 'Variable', 'Estimate'))
+        print(fmt % ('', '', 'Estimate'))
         for i, (key, value) in enumerate(zip(self.coefz_keys, self.coefz_values)):
-            print(fmt % (i, key, value))
+            print(fmt % (key, '', value))
 
         return ''
 
 
 # from https://vincentarelbundock.github.io/Rdatasets/csv/pscl/bioChemists.csv
 df = pd.read_csv('~/Downloads/bioChemists.csv')
-formula_ = 'art ~ fem + mar + phd + kid5 + ment | fem + mar + phd + kid5 + ment'
+formula_ = 'art ~ fem + mar + phd + kid5 + ment|1'
+Zeroinf(data=df, formula=formula_)
+
+
+df = pd.read_csv('~/Downloads/fish.csv')
+formula_ = 'count ~ child + camper | persons'
 Zeroinf(data=df, formula=formula_)
