@@ -1,3 +1,4 @@
+
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -17,7 +18,7 @@ class zipois:
         '''
         self.formula = formula
         self.data = data
-        self.call = 'Zeroinf(formula = ' + self.formula + \
+        self.call = 'zipois(formula = ' + self.formula + \
             ', data = df, link = \'logit\')'
 
         # da matrices
@@ -190,14 +191,3 @@ class zipois:
             print(fmt % (key, '', value))
 
         return ''
-
-
-# from https://vincentarelbundock.github.io/Rdatasets/csv/pscl/bioChemists.csv
-df = pd.read_csv('~/Downloads/bioChemists.csv')
-formula_ = 'art ~ fem + mar + phd + kid5 + ment|1'
-zipois(data=df, formula=formula_)
-
-
-df = pd.read_csv('~/Downloads/fish.csv')
-formula_ = 'count ~ child + camper | persons'
-zipois(data=df, formula=formula_)
