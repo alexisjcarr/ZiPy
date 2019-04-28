@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class Zeroinf:
+class zipois:
     def __init__(self, formula, data, dist='poisson', link='logit', **kwargs):
         '''
         Class Constructor
@@ -18,7 +18,7 @@ class Zeroinf:
         self.formula = formula
         self.data = data
         self.call = 'Zeroinf(formula = ' + self.formula + \
-            ', data = df, dist = \'poisson\', link = \'logit\')'
+            ', data = df, link = \'logit\')'
 
         # da matrices
         self.X, self.Y, self.Z = self.formula_extraction( \
@@ -195,9 +195,9 @@ class Zeroinf:
 # from https://vincentarelbundock.github.io/Rdatasets/csv/pscl/bioChemists.csv
 df = pd.read_csv('~/Downloads/bioChemists.csv')
 formula_ = 'art ~ fem + mar + phd + kid5 + ment|1'
-Zeroinf(data=df, formula=formula_)
+zipois(data=df, formula=formula_)
 
 
 df = pd.read_csv('~/Downloads/fish.csv')
 formula_ = 'count ~ child + camper | persons'
-Zeroinf(data=df, formula=formula_)
+zipois(data=df, formula=formula_)
