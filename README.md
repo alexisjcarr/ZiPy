@@ -5,19 +5,19 @@ Some count data, at times, may prove difficult to run standard statistical analy
 
 This model is easily implemented in R via the `pscl` package. However, there is currently not a Python implementation of a similar package. Our project seeks to translate the zero‐inflated model functionality of the `pscl` package into Python.
 
-## Objectives
-For this project, we aim to accomplish the following goals. Goals I and II constitute our minimum viable product, while we aim to complete Goal III if time permits.
+## Objectives  
+For this project, we aim to accomplish the following goals. **Goals I** and **II** will constitute our minimum viable product, while we aim to complete Goal III if time permits.
 
-#### Goal I. Translate the R `pscl` package function zeroinf, namely the sub‐functions listed below. Said sub‐functions will use the results of `GLM.fit` for their starting values. We will limit ourselves to implementing the `logit` link for simplicity.  
+**Goal I. Translate the R `pscl` package function zeroinf, namely the sub‐functions listed below.** Said sub‐functions will use the results of `GLM.fit` for their starting values. We will limit ourselves to implementing the `logit` link for simplicity.  
 * likelihood and log‐likelihood  
 * gradient likelihood   
 * maximum likelihood  
 
-#### Goal II. Compare the functionality of our package for both veracity and speed against the R pscl package.  
+**Goal II. Compare the functionality of our package for both veracity and speed against the R pscl package.**    
 * The veracity of the results will be tested on the datasets supplied with the `pscl` package, including but not limited to the absentee ballot dataset.  
 * The speed will be clocked using the linux command‐line tool `time` tool to time both the R and Python packages real runtimes.
 
-#### Goal III. Implement at least one of the following:  
+**Goal III. Implement at least one of the following:**   
 * zero‐inflated negative binomial regression  
 * zero‐inflated geometric regression
 
