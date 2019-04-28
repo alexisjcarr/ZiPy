@@ -133,9 +133,14 @@ class Zeroinf:
             coefz_values.append(value)
         coefz = dict(zip(coefz_keys, coefz_values))
 
-        ## fitted and residuals TODO
+        ## fitted and residuals
+        mu = np.exp(self.X @ coefc + self.offsetx)
+        phi = expit(self.Z @ coefz + self.offsetz)
+        yhat = (1 - phi) * mu
+        res = np.sqrt(self.weights) * (self.Y - yhat)
 
-        ## effective observations TODO
+        ## effective observations
+        nobs = np.sum(self.weights > 0)
 
         return coefc, coefz
     
