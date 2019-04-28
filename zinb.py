@@ -167,7 +167,7 @@ class zinb:
     def mlEstimation(self, x0):  # have this called in the constructor and return those variables
         fun = self.ziNegBin
         jac = self.gradNegBin
-        method = 'Powell'
+        method = 'Nelder-Mead'
         options = {'maxiter': 10000, 'disp': True}
 
         fit_ = sp.optimize.minimize(fun, x0=x0, method=method, jac=jac, \
