@@ -1,4 +1,3 @@
-<div style="text-align: justify">
 # Implementing a Zero‑Inflated Poisson Regression Package in Python
 
 ## Background
