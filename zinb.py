@@ -85,31 +85,6 @@ class zinb:
 
         return sign*loglik
 
-#  gradNegBin <- function(parms) {
-#     ## count mean
-#     eta <- as.vector(X %*% parms[1:kx] + offset)
-#     mu <- exp(eta)
-#     ## binary mean
-#     etaz <- as.vector(Z %*% parms[(kx+1):(kx+kz)])
-#     muz <- linkinv(etaz)
-#     ## negbin size
-#     theta <- exp(parms[(kx+kz)+1])
-
-#     ## densities at 0
-#     clogdens0 = sp.stats.nbinom.pmf(0, theta, prob)
-#     dens0 <- muz * (1 - as.numeric(Y1)) + exp(log(1 - muz) + clogdens0)
-
-#     ## working residuals
-#     wres_count <- ifelse(Y1, Y - mu * (Y + theta)/(mu + theta), -exp(-log(dens0) +
-#       log(1 - muz) + clogdens0 + log(theta) - log(mu + theta) + log(mu)))
-#     wres_zero <- ifelse(Y1, -1/(1-muz) * linkobj$mu.eta(etaz),
-#       (linkobj$mu.eta(etaz) - exp(clogdens0) * linkobj$mu.eta(etaz))/dens0)
-#     wres_theta <- theta * ifelse(Y1, digamma(Y + theta) - digamma(theta) +
-#       log(theta) - log(mu + theta) + 1 - (Y + theta)/(mu + theta),
-#       exp(-log(dens0) + log(1 - muz) + clogdens0) *
-#       (log(theta) - log(mu + theta) + 1 - theta/(mu + theta)))
-
-#     colSums(cbind(wres_count * weights * X, wres_zero * weights * Z, wres_theta))
 
     def gradNegBin(self, parms, sign=1.0):
         '''
