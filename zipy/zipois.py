@@ -43,7 +43,7 @@ class zipois:
                             'countStartValues': self.modelCount.params}
 
         self.coefc_keys, self.coefc_values, self.coefz_keys,\
-            self.coefz_values = \
+            self.coefz_values, self.pearson_res = \
             self.mlEstimation(x0=np.hstack((self.modelParams['countStartValues'].values,
                                             self.modelParams['zeroStartValues'].values)))
 
@@ -161,7 +161,7 @@ class zipois:
         pearson_res = np.round(st.mstats.mquantiles(res, \
                                                     prob=[0, 0.25, 0.5, 0.75, 1.0]), 5)
 
-        return coefc_keys, coefc_values, coefz_keys, coefz_values
+        return coefc_keys, coefc_values, coefz_keys, coefz_values, pearson_res
 
     def __repr__(self):
         print('Call:')
