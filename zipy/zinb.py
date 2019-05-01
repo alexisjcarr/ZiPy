@@ -45,7 +45,7 @@ class zinb:
                             'countStartValues': self.modelCount.params}
 
         self.coefc_keys, self.coefc_values, self.coefz_keys,\
-            self.coefz_values = \
+            self.coefz_values, self.pearson_res = \
             self.mlEstimation(x0=np.hstack((self.modelParams['countStartValues'].values, \
                                             self.modelParams['zeroStartValues'].values, \
                                             np.log(1))))
@@ -134,9 +134,6 @@ class zinb:
                            family=sm.genmod.families.Binomial(link=sm.genmod.families.links.logit), freq_weights=self.weights, \
                            offset=self.offsetz).fit()
 
-        self.startValues = {'zeroStartValues': modelZero.params, \
-                            'countStartValues': modelCount.params}
-
         return modelZero, modelCount
 
     def mlEstimation(self, x0):  # have this called in the constructor and return those variables
@@ -178,15 +175,15 @@ class zinb:
         pearson_res = np.round(st.mstats.mquantiles(res,\
                                                     prob=[0, 0.25, 0.5, 0.75, 1.0]), 5)
 
-        return coefc_keys, coefc_values, coefz_keys, coefz_values
+        return coefc_keys, coefc_values, coefz_keys, coefz_values, pearson_res
 
     def __repr__(self):
         print('Call:')
         print(self.call + '\n')
-                print('Pearson residuals:')
-                print('Min\t  1Q\t     Median\t3Q\t Max')
-                print(*self.pearson_res, sep=' | ')
-                print('\n')
+        print('Pearson residuals:')
+        print('Min\t  1Q\t     Median\t3Q\t Max')
+        print(*self.pearson_res, sep=' | ')
+        print('\n')
         print('Count model coefficients (neg bin with log link):')
         #out += '            Estimate Std. | Error | z-value | Pr(>|z|)\n\n'
 
