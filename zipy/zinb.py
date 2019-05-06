@@ -14,7 +14,7 @@ class zinb:
     def __init__(self, formula, data, link='logit'):
         '''
         Zero-Inflated Negative Binomial
-        ''''
+        '''
         self.formula = formula
         self.data = data
         self.call = 'ziNegBin(formula = ' + self.formula + \
